@@ -53,7 +53,7 @@
   changed_when: "'unchanged: 1' not in reg_import_gpg_keys.stderr"
   args:
     executable: /bin/bash
-    
+
 - name: Ensure API service is latest
   template:
     src: aptly-api.service.j2
@@ -65,38 +65,41 @@
     - Enable aptly-api
     - Restart aptly-api
 
-- name: Ensure mirror instance service is latest
-  template:
-    src: aptly-mirror@.service.j2
-    dest: /etc/systemd/system/aptly-mirror@.service
-    mode: "0644"
-  notify:
-    - Reload systemd
+- name: Setup mirror services
+  when: aptly__mirrors is defined and aptly__mirrors | length > 0
+  block:
+    - name: Ensure mirror instance service is latest
+      template:
+        src: aptly-mirror@.service.j2
+        dest: /etc/systemd/system/aptly-mirror@.service
+        mode: "0644"
+      notify:
+        - Reload systemd
 
-- name: Ensure mirror instance timer is latest
-  template:
-    src: aptly-mirror@.timer.j2
-    dest: /etc/systemd/system/aptly-mirror@.timer
-    mode: "0644"
-  notify:
-    - Reload systemd
+    - name: Ensure mirror instance timer is latest
+      template:
+        src: aptly-mirror@.timer.j2
+        dest: /etc/systemd/system/aptly-mirror@.timer
+        mode: "0644"
+      notify:
+        - Reload systemd
 
-- name: Ensure mirror update script is latest
-  copy:
-    src: aptly-mirror-update.py
-    dest: /usr/local/bin/aptly-mirror-update
-    mode: "0755"
-    owner: root
-    group: root
+    - name: Ensure mirror update script is latest
+      copy:
+        src: aptly-mirror-update.py
+        dest: /usr/local/bin/aptly-mirror-update
+        mode: "0755"
+        owner: root
+        group: root
 
-- name: Ensure mirror env directory exists
-  file:
-    path: /etc/aptly/mirror
-    recurse: true
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
+    - name: Ensure mirror env directory exists
+      file:
+        path: /etc/aptly/mirror
+        recurse: true
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
 
 - name: Flush handlers
   meta: flush_handlers
